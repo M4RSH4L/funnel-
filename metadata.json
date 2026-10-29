@@ -1,0 +1,6 @@
+{
+  "name": "LQMTM - Sorteo 1 Año de Alimento Gratis",
+  "description": "Funnel oficial de adquisición de Lo Que Mastica Tu Mascota: sorteo de 1 año de alimento gratis, beneficio exclusivo en primera compra y medición con Meta Pixel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

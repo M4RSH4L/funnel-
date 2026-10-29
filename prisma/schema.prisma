@@ -1,0 +1,65 @@
+// Prisma Schema for Lo Que Mastica Tu Mascota (LQMTM)
+// Database: Managed PostgreSQL (Vercel Postgres, Supabase, Neon, or Cloud SQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PetType {
+  dog
+  cat
+}
+
+model Participant {
+  id                 String    @id @default(cuid())
+  fullName           String    @db.VarChar(120)
+  petName            String    @db.VarChar(80)
+  petType            PetType
+  locality           String    @db.VarChar(100)
+  currentFood        String    @db.VarChar(120)
+  phoneNormalized    String    @db.VarChar(30)
+  
+  // Legal & Consent Audit Trail
+  termsAccepted      Boolean   @default(false)
+  termsVersion       String    @default("1.0-2026") @db.VarChar(20)
+  marketingConsent   Boolean   @default(false)
+  marketingConsentAt DateTime?
+
+  // Attribution & Campaign Data
+  utmSource          String?   @db.VarChar(100)
+  utmMedium          String?   @db.VarChar(100)
+  utmCampaign        String?   @db.VarChar(100)
+  utmContent         String?   @db.VarChar(100)
+  utmTerm            String?   @db.VarChar(100)
+  fbclid             String?   @db.VarChar(150)
+  ipHash             String?   @db.VarChar(64)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Constraints: unique phone per termsVersion prevents duplicate submissions
+  @@unique([phoneNormalized, termsVersion], name: "unique_participant_phone_campaign")
+  @@index([createdAt])
+  @@index([petType])
+  @@index([locality])
+  @@index([utmCampaign])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  eventName  String   @db.VarChar(80)
+  eventData  Json?
+  utmSource  String?  @db.VarChar(100)
+  utmMedium  String?  @db.VarChar(100)
+  utmCampaign String? @db.VarChar(100)
+  ipHash     String?  @db.VarChar(64)
+  createdAt  DateTime @default(now())
+
+  @@index([eventName])
+  @@index([createdAt])
+}
