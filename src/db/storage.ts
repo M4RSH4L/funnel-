@@ -1,4 +1,5 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import crypto from 'crypto';
 
@@ -39,7 +40,9 @@ interface DatabaseState {
   pageViewsCount: number;
 }
 
-const DB_FILE_PATH = path.resolve(process.cwd(), '.lqmtm_data.json');
+const DB_FILE_PATH = process.env.VERCEL
+  ? path.join(os.tmpdir(), '.lqmtm_data.json')
+  : path.resolve(process.cwd(), '.lqmtm_data.json');
 
 // Memory rate limit cache: ipHash -> timestamps array
 const rateLimitCache = new Map<string, number[]>();
@@ -200,12 +203,62 @@ export interface RegisterParticipantInput {
   ipAddress?: string;
 }
 
-export function registerParticipant(input: RegisterParticipantInput): {
+export async function registerParticipant(input: RegisterParticipantInput): Promise<{
   success: boolean;
   participant?: ParticipantRecord;
   error?: string;
   code?: 'DUPLICATE' | 'VALIDATION' | 'RATE_LIMIT' | 'SERVER_ERROR';
-} {
+}> {
+  const ipHashVal = input.ipAddress ? hashIp(input.ipAddress) : undefined;
+  const newId = 'lqmtm_' + crypto.randomUUID().slice(0, 12);
+
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim();
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const rpcRes = await fetch(
+        `${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/register_raffle_participant`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            p_id: newId,
+            p_full_name: input.fullName.trim(),
+            p_pet_name: input.petName.trim(),
+            p_pet_type: input.petType,
+            p_locality: input.locality.trim(),
+            p_current_food: input.currentFood.trim(),
+            p_phone_normalized: input.phoneNormalized,
+            p_terms_accepted: input.termsAccepted,
+            p_terms_version: input.termsVersion,
+            p_marketing_consent: input.marketingConsent,
+            p_utm_source: input.utmSource || null,
+            p_utm_medium: input.utmMedium || null,
+            p_utm_campaign: input.utmCampaign || null,
+            p_utm_content: input.utmContent || null,
+            p_utm_term: input.utmTerm || null,
+            p_fbclid: input.fbclid || null,
+            p_ip_hash: ipHashVal || null,
+          }),
+        }
+      );
+
+      if (rpcRes.ok) {
+        const rpcData = await rpcRes.json();
+        if (rpcData && typeof rpcData.success === 'boolean') {
+          return rpcData;
+        }
+      }
+    } catch (err) {
+      console.error('Supabase RPC registration error, falling back to local store:', err);
+    }
+  }
+
   const db = loadDb();
 
   // 1. Double check duplicate phone on current termsVersion
@@ -223,7 +276,7 @@ export function registerParticipant(input: RegisterParticipantInput): {
 
   // 2. Create new record
   const newParticipant: ParticipantRecord = {
-    id: 'lqmtm_' + crypto.randomUUID().slice(0, 12),
+    id: newId,
     fullName: input.fullName.trim(),
     petName: input.petName.trim(),
     petType: input.petType,
@@ -240,7 +293,7 @@ export function registerParticipant(input: RegisterParticipantInput): {
     utmContent: input.utmContent,
     utmTerm: input.utmTerm,
     fbclid: input.fbclid,
-    ipHash: input.ipAddress ? hashIp(input.ipAddress) : undefined,
+    ipHash: ipHashVal,
     createdAt: new Date().toISOString(),
   };
 
@@ -253,11 +306,38 @@ export function registerParticipant(input: RegisterParticipantInput): {
   };
 }
 
-export function recordAnalyticsEvent(
+export async function recordAnalyticsEvent(
   eventName: string,
   eventData?: Record<string, any>,
   utms?: Record<string, any>
-): void {
+): Promise<void> {
+  const eventId = 'ev_' + crypto.randomUUID().slice(0, 8);
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim();
+
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/analytics_events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          id: eventId,
+          event_name: eventName,
+          event_data: eventData || {},
+          utm_source: utms?.utm_source || null,
+          utm_campaign: utms?.utm_campaign || null,
+        }),
+      });
+    } catch {
+      // Non-blocking
+    }
+  }
+
   const db = loadDb();
 
   if (eventName === 'landing_view') {
@@ -265,7 +345,7 @@ export function recordAnalyticsEvent(
   }
 
   db.events.push({
-    id: 'ev_' + crypto.randomUUID().slice(0, 8),
+    id: eventId,
     eventName,
     eventData,
     utmSource: utms?.utm_source,
@@ -281,35 +361,106 @@ export function recordAnalyticsEvent(
   saveDb(db);
 }
 
-export function getCampaignStats() {
+export async function getCampaignStats(authToken?: string) {
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim();
+
+  let participants: ParticipantRecord[] | null = null;
+  let events: AnalyticsEventRecord[] | null = null;
+
+  if (supabaseUrl && supabaseAnonKey && authToken) {
+    try {
+      const [partRes, evRes] = await Promise.all([
+        fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/participants?select=*&order=created_at.asc`, {
+          headers: {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${authToken}`,
+          },
+        }),
+        fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/analytics_events?select=*&order=created_at.asc`, {
+          headers: {
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${authToken}`,
+          },
+        }),
+      ]);
+
+      if (partRes.ok && evRes.ok) {
+        const rawParticipants = await partRes.json();
+        const rawEvents = await evRes.json();
+        if (Array.isArray(rawParticipants) && Array.isArray(rawEvents)) {
+          participants = rawParticipants.map((r: any) => ({
+            id: r.id,
+            fullName: r.full_name,
+            petName: r.pet_name,
+            petType: r.pet_type,
+            locality: r.locality,
+            currentFood: r.current_food,
+            phoneNormalized: r.phone_normalized,
+            termsAccepted: r.terms_accepted,
+            termsVersion: r.terms_version,
+            marketingConsent: r.marketing_consent,
+            marketingConsentAt: r.marketing_consent_at,
+            utmSource: r.utm_source,
+            utmMedium: r.utm_medium,
+            utmCampaign: r.utm_campaign,
+            createdAt: r.created_at,
+          }));
+          events = rawEvents.map((e: any) => ({
+            id: e.id,
+            eventName: e.event_name,
+            eventData: e.event_data,
+            utmSource: e.utm_source,
+            utmCampaign: e.utm_campaign,
+            createdAt: e.created_at,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching stats from Supabase, using local fallback:', err);
+    }
+  }
+
   const db = loadDb();
-  const totalViews = Math.max(db.pageViewsCount || 1, db.participants.length * 3);
-  const totalLeads = db.participants.length;
-  
-  const formStarts = db.events.filter(e => e.eventName === 'form_start').length + Math.round(totalLeads * 1.3);
-  const whatsappClicks = db.events.filter(e => e.eventName === 'whatsapp_click' || e.eventName === 'product_whatsapp_click').length;
+  const activeParticipants = participants ?? db.participants;
+  const activeEvents = events ?? db.events;
+  const landingViews = activeEvents.filter(e => e.eventName === 'landing_view').length;
+  const totalViews = Math.max(
+    participants ? landingViews : (db.pageViewsCount || 1),
+    activeParticipants.length * 3,
+    1
+  );
+  const totalLeads = activeParticipants.length;
+
+  const formStarts = Math.max(
+    activeEvents.filter(e => e.eventName === 'form_start').length,
+    totalLeads
+  );
+  const whatsappClicks = activeEvents.filter(
+    e => e.eventName === 'whatsapp_click' || e.eventName === 'product_whatsapp_click'
+  ).length;
 
   // Breakdown by Pet Type
-  const dogCount = db.participants.filter(p => p.petType === 'dog').length;
-  const catCount = db.participants.filter(p => p.petType === 'cat').length;
+  const dogCount = activeParticipants.filter(p => p.petType === 'dog').length;
+  const catCount = activeParticipants.filter(p => p.petType === 'cat').length;
 
   // Breakdown by Locality
   const localityMap: Record<string, number> = {};
-  db.participants.forEach(p => {
+  activeParticipants.forEach(p => {
     const loc = p.locality || 'Sin especificar';
     localityMap[loc] = (localityMap[loc] || 0) + 1;
   });
 
   // Breakdown by Food Brand
   const foodMap: Record<string, number> = {};
-  db.participants.forEach(p => {
+  activeParticipants.forEach(p => {
     const food = p.currentFood || 'Sin especificar';
     foodMap[food] = (foodMap[food] || 0) + 1;
   });
 
   // Breakdown by UTM Source
   const utmMap: Record<string, number> = {};
-  db.participants.forEach(p => {
+  activeParticipants.forEach(p => {
     const src = p.utmSource || 'directo / orgánico';
     utmMap[src] = (utmMap[src] || 0) + 1;
   });
@@ -341,7 +492,7 @@ export function getCampaignStats() {
     sources: Object.entries(utmMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count),
-    recentParticipants: db.participants.slice(-5).reverse().map(p => ({
+    recentParticipants: activeParticipants.slice(-5).reverse().map(p => ({
       id: p.id,
       fullName: p.fullName,
       petName: p.petName,

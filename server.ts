@@ -97,7 +97,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // API Route: Register Raffle Participant
-app.post('/api/register', (req: Request, res: Response) => {
+app.post('/api/register', async (req: Request, res: Response) => {
   try {
     const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress || '127.0.0.1';
     const ipHash = hashIp(clientIp);
@@ -205,7 +205,7 @@ app.post('/api/register', (req: Request, res: Response) => {
     }
 
     // 5. Persist Participant in Database
-    const registerResult = registerParticipant({
+    const registerResult = await registerParticipant({
       fullName,
       petName,
       petType,
@@ -269,11 +269,11 @@ app.post('/api/register', (req: Request, res: Response) => {
 });
 
 // API Route: Internal Analytics Track
-app.post('/api/analytics/track', (req: Request, res: Response) => {
+app.post('/api/analytics/track', async (req: Request, res: Response) => {
   try {
     const { eventName, eventData, utms } = req.body || {};
     if (eventName && typeof eventName === 'string') {
-      recordAnalyticsEvent(eventName.slice(0, 80), eventData, utms);
+      await recordAnalyticsEvent(eventName.slice(0, 80), eventData, utms);
     }
     res.json({ ok: true });
   } catch {
@@ -428,7 +428,7 @@ app.get('/api/campaign/stats', async (req: Request, res: Response) => {
       return;
     }
 
-    const stats = getCampaignStats();
+    const stats = await getCampaignStats(token);
     res.json({ success: true, stats });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Error fetching stats' });
@@ -459,4 +459,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
