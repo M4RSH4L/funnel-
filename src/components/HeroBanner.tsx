@@ -29,7 +29,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({ onScrollToForm }) => {
           </h1>
 
           <p className="mt-2 text-xs sm:text-sm text-neutral-700 max-w-lg mx-auto font-medium">
-            Registrate en 30 segundos. El premio incluye 12 bolsas mensuales de alimento premium adaptado a la especie y peso de tu compañero.
+            Registrate en 30 segundos. El premio incluye 1 bolsa mensual de alimento premium durante 1 año entero, adaptado a la especie y peso de tu compañero.
           </p>
 
           {/* Trust bullet badges */}

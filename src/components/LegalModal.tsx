@@ -33,7 +33,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose }) => {
       aria-modal="true"
       aria-labelledby="modal-legal-title"
     >
-      <div className="bg-white rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-neutral-200 overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-5 border-b border-neutral-100 bg-neutral-50/70">
           <div className="flex items-center gap-2">
@@ -59,20 +59,43 @@ export const LegalModal: React.FC<LegalModalProps> = ({ type, onClose }) => {
         {/* Modal Content */}
         <div className="p-6 overflow-y-auto text-xs sm:text-sm text-neutral-700 leading-relaxed space-y-4">
           {isTerms ? (
-            <>
-              <p className="font-bold text-neutral-900">
-                {CAMPAIGN_CONFIG.legal.termsTitle} (Versión {CAMPAIGN_CONFIG.raffle.termsVersion})
-              </p>
-              <ul className="space-y-2 list-disc pl-5">
-                {CAMPAIGN_CONFIG.legal.termsSummary.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs">
-                <strong>Importante:</strong> El premio es personal e intransferible y no podrá ser canjeado por dinero
-                en efectivo u otros bienes ajenos a la oferta del sorteo.
+            <div className="space-y-5">
+              <div className="border-b border-neutral-200 pb-4">
+                <h1 className="text-lg sm:text-xl font-black text-neutral-950 tracking-tight">
+                  {CAMPAIGN_CONFIG.legal.termsTitle}
+                </h1>
+                <h2 className="text-sm sm:text-base font-bold text-red-600 mt-1">
+                  {CAMPAIGN_CONFIG.legal.termsSubtitle}
+                </h2>
+                <p className="text-xs italic text-neutral-500 mt-0.5">
+                  {CAMPAIGN_CONFIG.legal.termsVersionLine}
+                </p>
               </div>
-            </>
+
+              <div className="space-y-5">
+                {CAMPAIGN_CONFIG.legal.termsSections.map((section, idx) => (
+                  <section key={idx} className="space-y-2">
+                    <h3 className="text-xs sm:text-sm font-black text-neutral-900 uppercase tracking-wide">
+                      {section.title}
+                    </h3>
+                    <div className="space-y-2">
+                      {section.paragraphs.map((paragraph, pIdx) => {
+                        const isItalic = paragraph.startsWith('*') && paragraph.endsWith('*');
+                        const cleanText = isItalic ? paragraph.slice(1, -1) : paragraph;
+                        return (
+                          <p
+                            key={pIdx}
+                            className={isItalic ? 'italic font-medium text-neutral-800' : 'text-neutral-700'}
+                          >
+                            {cleanText}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
           ) : (
             <>
               <p className="font-bold text-neutral-900">
