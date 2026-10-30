@@ -11,7 +11,10 @@ declare global {
   }
 }
 
+const DEFAULT_META_PIXEL_ID = '4059961197640642';
+
 let pixelInitialized = false;
+let initialPageViewTracked = false;
 
 export function getMetaPixelId(): string | null {
   const pixelId =
@@ -21,7 +24,7 @@ export function getMetaPixelId(): string | null {
   if (pixelId && typeof pixelId === 'string' && pixelId.trim() !== '' && pixelId !== 'MY_META_PIXEL_ID') {
     return pixelId.trim();
   }
-  return null;
+  return DEFAULT_META_PIXEL_ID;
 }
 
 export function initMetaPixel(consentGranted: boolean = true): boolean {
@@ -30,6 +33,13 @@ export function initMetaPixel(consentGranted: boolean = true): boolean {
     return false;
   }
   if (pixelInitialized) return true;
+
+  // If the Meta Pixel base script is already present in <head>, mark as initialized
+  if (typeof window.fbq === 'function') {
+    pixelInitialized = true;
+    initialPageViewTracked = true;
+    return true;
+  }
 
   const pixelId = getMetaPixelId();
   if (!pixelId) {
@@ -66,10 +76,14 @@ export function initMetaPixel(consentGranted: boolean = true): boolean {
 }
 
 /**
- * Dispatches standard PageView event.
+ * Dispatches standard PageView event (avoids duplicating the initial <head> PageView).
  */
 export function trackPixelPageView(): void {
   if (typeof window === 'undefined' || !window.fbq) return;
+  if (initialPageViewTracked) {
+    initialPageViewTracked = false;
+    return;
+  }
   window.fbq('track', 'PageView');
 }
 
