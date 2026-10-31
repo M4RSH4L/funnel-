@@ -192,56 +192,187 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
           </div>
         </div>
 
-        {/* BLOQUE 2: Beneficio Exclusivo de Primera Compra */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-red-600 via-red-700 to-amber-600 text-white p-6 sm:p-8 shadow-2xl border-4 border-amber-400">
-          {/* Background sparkles */}
-          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-            <Gift className="w-64 h-64" />
-          </div>
+        {/* BLOQUE 2: Beneficio Exclusivo de Primera Compra (Rebranding) */}
+        <div className="relative rounded-[28px] sm:rounded-[32px] overflow-hidden bg-gradient-to-br from-[#CE060E] via-[#DA0812] to-[#B8040B] text-white p-5 sm:p-7 md:px-8 md:py-7 shadow-2xl">
+          {/* Decorative background paw prints */}
+          <svg
+            viewBox="0 0 200 200"
+            className="absolute -top-6 right-2 w-48 h-48 sm:w-56 sm:h-56 text-white/[0.08] rotate-12 pointer-events-none select-none"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <ellipse cx="62" cy="52" rx="18" ry="26" transform="rotate(-18 62 52)" />
+            <ellipse cx="102" cy="40" rx="18" ry="27" transform="rotate(-4 102 40)" />
+            <ellipse cx="142" cy="52" rx="18" ry="26" transform="rotate(14 142 52)" />
+            <ellipse cx="172" cy="84" rx="16" ry="23" transform="rotate(28 172 84)" />
+            <path d="M58 118c0-24 22-42 48-42s48 18 48 42c0 20-16 34-32 34-9 0-14-4-20-4s-11 4-20 4c-14 0-24-14-24-34z" />
+          </svg>
 
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-neutral-950 text-xs font-black uppercase tracking-wider mb-4 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-red-700" />
-              <span>{CAMPAIGN_CONFIG.firstPurchaseOffer.badge}</span>
+          <svg
+            viewBox="0 0 200 200"
+            className="absolute -bottom-8 right-6 w-40 h-40 sm:w-44 sm:h-44 text-black/[0.14] -rotate-12 pointer-events-none select-none"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <ellipse cx="62" cy="52" rx="18" ry="26" transform="rotate(-18 62 52)" />
+            <ellipse cx="102" cy="40" rx="18" ry="27" transform="rotate(-4 102 40)" />
+            <ellipse cx="142" cy="52" rx="18" ry="26" transform="rotate(14 142 52)" />
+            <ellipse cx="172" cy="84" rx="16" ry="23" transform="rotate(28 172 84)" />
+            <path d="M58 118c0-24 22-42 48-42s48 18 48 42c0 20-16 34-32 34-9 0-14-4-20-4s-11 4-20 4c-14 0-24-14-24-34z" />
+          </svg>
+
+          {/* Decorative hand-drawn yellow heart & sparkles on right */}
+          <svg
+            viewBox="0 0 60 140"
+            className="hidden md:block absolute top-24 right-2.5 w-12 h-28 text-[#FFD100] pointer-events-none select-none z-20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M26 36 C18 22, 6 24, 10 38 C13 48, 25 56, 26 58 C29 54, 43 44, 44 33 C45 22, 32 23, 26 36 Z" />
+            <line x1="28" y1="108" x2="40" y2="94" />
+            <line x1="30" y1="118" x2="48" y2="113" />
+          </svg>
+
+          <div className="relative z-10">
+            {/* Top-left White Brand Logo Pill + Headlines */}
+            <div className="md:max-w-[58%]">
+              <div className="inline-flex items-center justify-center bg-white rounded-2xl px-4 py-1.5 shadow-md mb-3.5">
+                <img
+                  src={CAMPAIGN_CONFIG.firstPurchaseOffer.logoBadgeUrl}
+                  alt={CAMPAIGN_CONFIG.brand.name}
+                  className="h-9 sm:h-11 w-auto object-contain select-none"
+                />
+              </div>
+
+              <h3 className="text-[25px] sm:text-3xl md:text-[34px] lg:text-[36px] font-black tracking-tight leading-[1.08] text-white">
+                Tu mascota también puede llevarse un{' '}
+                <span className="text-[#FFD100]">premio</span> hoy
+              </h3>
+
+              <p className="mt-2.5 sm:mt-3 text-xs sm:text-[15px] text-white/95 font-medium leading-snug">
+                Descubrí tu beneficio de primera compra, sumá un{' '}
+                <strong className="font-extrabold text-white">snack de regalo</strong> y recibí tu pedido con{' '}
+                <strong className="font-extrabold text-white">envío gratis</strong> en las zonas habilitadas.
+              </p>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-              {CAMPAIGN_CONFIG.firstPurchaseOffer.title}
-            </h3>
+            {/* Mobile Pets Hero (shown on small screens tucked behind the top of Beneficio #1) */}
+            <div className="md:hidden relative mt-4 -mb-11 flex justify-center z-0 pointer-events-none select-none">
+              <img
+                src={CAMPAIGN_CONFIG.firstPurchaseOffer.petsHeroUrl}
+                alt="Perro y gato felices con su premio LQMTM"
+                className="w-64 sm:w-72 h-auto object-contain"
+              />
+            </div>
 
-            <p className="mt-3 text-sm sm:text-base text-red-50 font-medium leading-relaxed">
-              {CAMPAIGN_CONFIG.firstPurchaseOffer.subtitle}
-            </p>
+            {/* 3 Benefit Cards + Desktop Pets Hero anchored to the cards row */}
+            <div className="relative mt-0 md:mt-6">
+              {/* Desktop Pets Hero: dog paw rests right on top of Beneficio #3, cat paw hangs on the right */}
+              <img
+                src={CAMPAIGN_CONFIG.firstPurchaseOffer.petsHeroUrl}
+                alt="Perro y gato felices con su premio LQMTM"
+                className="hidden md:block absolute top-0 right-4 lg:right-4 w-[335px] lg:w-[370px] h-auto object-contain -translate-y-[79.2%] z-20 pointer-events-none select-none"
+              />
 
-            {/* Highlights Grid */}
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
-                <span className="text-xs text-amber-200 font-bold block">Beneficio #1</span>
-                <span className="text-sm font-extrabold text-white">15% OFF en 1er Pedido</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
-                <span className="text-xs text-amber-200 font-bold block">Beneficio #2</span>
-                <span className="text-sm font-extrabold text-white">Snack Dental de Regalo</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/20">
-                <span className="text-xs text-amber-200 font-bold block">Beneficio #3</span>
-                <span className="text-sm font-extrabold text-white">Envío Gratis en AMBA</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 md:gap-2.5 md:w-[82%] lg:w-[81%] relative">
+                {CAMPAIGN_CONFIG.firstPurchaseOffer.benefits.map((benefit, index) => (
+                  <React.Fragment key={benefit.id}>
+                    <div className="relative bg-[#FAF1EC] rounded-2xl px-3.5 py-2.5 sm:px-3.5 sm:py-3 shadow-md flex items-center gap-3 z-10">
+                      {/* Circular Prize Image */}
+                      <div className="w-14 h-14 sm:w-[58px] sm:h-[58px] rounded-full overflow-hidden shrink-0 bg-[#D50911] border-2 border-[#D50911]/20 shadow-xs flex items-center justify-center">
+                        <img
+                          src={benefit.imageUrl}
+                          alt={benefit.imageAlt}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Benefit Copy */}
+                      <div className="min-w-0 leading-tight">
+                        <span className="text-xs sm:text-[13px] font-extrabold text-[#D50911] block">
+                          {benefit.label}
+                        </span>
+                        <span className="text-xl sm:text-[21px] font-black text-[#261013] block leading-none mt-0.5 tracking-tight">
+                          {benefit.title}
+                        </span>
+                        <span className="text-xs sm:text-[13.5px] font-extrabold text-[#261013] block leading-tight mt-0.5">
+                          {benefit.subtitle}
+                        </span>
+                      </div>
+
+                      {/* Desktop '+' connector between cards */}
+                      {index < CAMPAIGN_CONFIG.firstPurchaseOffer.benefits.length - 1 && (
+                        <span
+                          className="hidden md:flex absolute -right-[11px] -bottom-3.5 z-30 text-[#FFD100] font-black text-xl leading-none select-none pointer-events-none drop-shadow-xs"
+                          aria-hidden="true"
+                        >
+                          +
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mobile '+' connector between stacked cards */}
+                    {index < CAMPAIGN_CONFIG.firstPurchaseOffer.benefits.length - 1 && (
+                      <div
+                        className="md:hidden flex justify-center -my-1.5 text-[#FFD100] font-black text-lg leading-none select-none pointer-events-none"
+                        aria-hidden="true"
+                      >
+                        +
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
               </div>
             </div>
 
-            {/* WhatsApp CTA Button */}
-            <div className="mt-6 pt-2">
+            {/* Glossy Green WhatsApp CTA Button */}
+            <div className="mt-5 sm:mt-6">
               <button
                 type="button"
                 onClick={handleOfferWhatsAppClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 py-4 px-8 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-black text-base sm:text-lg shadow-xl shadow-emerald-900/40 hover:shadow-2xl transition-all active:scale-[0.98] cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-3 py-3 sm:py-3.5 px-5 sm:px-7 rounded-2xl bg-gradient-to-b from-[#2CE54B] via-[#19BD35] to-[#0E9624] hover:brightness-105 active:brightness-95 border border-[#6BF683]/60 text-white font-extrabold text-sm sm:text-lg shadow-[0_6px_16px_rgba(0,0,0,0.3)] hover:shadow-[0_8px_22px_rgba(0,0,0,0.38)] transition-all active:scale-[0.98] cursor-pointer"
               >
-                <MessageCircle className="w-6 h-6 fill-current" />
-                <span>{CAMPAIGN_CONFIG.firstPurchaseOffer.ctaText}</span>
+                {/* WhatsApp Bubble Icon */}
+                <svg
+                  viewBox="0 0 32 32"
+                  className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 text-white"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M16 4C9.373 4 4 9.208 4 15.633c0 2.48.8 4.78 2.164 6.668L4.75 27.5l5.453-1.39A12.16 12.16 0 0016 27.267c6.627 0 12-5.208 12-11.634C28 9.208 22.627 4 16 4z"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12.6 11.2c-.3-.65-.62-.66-.9-.67-.24-.01-.5-.01-.77-.01-.27 0-.7.1-1.07.5-.37.4-1.4 1.37-1.4 3.33 0 1.97 1.43 3.87 1.63 4.14.2.27 2.77 4.43 6.83 6.03 3.38 1.33 4.07 1.07 4.8.99.73-.08 2.37-.97 2.7-1.9.33-.93.33-1.73.23-1.9-.1-.17-.37-.27-.77-.47-.4-.2-2.37-1.17-2.73-1.3-.37-.13-.63-.2-.9.2-.27.4-1.03 1.3-1.27 1.57-.23.27-.47.3-.87.1-.4-.2-1.68-.62-3.2-1.98-1.18-1.05-1.98-2.35-2.22-2.75-.23-.4-.02-.61.18-.81.18-.18.4-.47.6-.7.2-.23.27-.4.4-.67.13-.27.07-.5-.03-.7-.1-.2-.88-2.17-1.23-2.97z"
+                    fill="currentColor"
+                  />
+                </svg>
+
+                <span className="tracking-tight">{CAMPAIGN_CONFIG.firstPurchaseOffer.ctaText}</span>
+
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-white stroke-[3] shrink-0" />
               </button>
-              <p className="mt-2 text-[11px] text-amber-100 font-medium">
-                Respuesta inmediata por asesores de nutrición de LQMTM. {CAMPAIGN_CONFIG.firstPurchaseOffer.validityNote}.
-              </p>
+
+              {/* Footer note with white info icon */}
+              <div className="mt-3 flex items-center gap-2 text-[11px] sm:text-xs text-white/95 font-medium">
+                <span
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white text-[#D50911] font-black text-[11px] leading-none shrink-0"
+                  aria-hidden="true"
+                >
+                  i
+                </span>
+                <p>
+                  Respuesta inmediata por asesores de nutrición de LQMTM. {CAMPAIGN_CONFIG.firstPurchaseOffer.validityNote}.
+                </p>
+              </div>
             </div>
           </div>
         </div>
