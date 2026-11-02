@@ -64,7 +64,8 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
 
   // WhatsApp click handler for specific product in carousel
   const handleProductWhatsAppClick = (product: ProductItem) => {
-    const message = `¡Hola! Me registré en el sorteo con mi ${participant.petType === 'dog' ? 'perro' : 'gato'} ${participant.petName} y elegí el producto "${product.name} (${product.presentation})". Quiero pedirlo con mi beneficio de primera compra (10% OFF + Snack de regalo + Envío Gratis).`;
+    const priceText = typeof product.price === 'number' ? ` ($${product.price.toLocaleString('es-AR')})` : '';
+    const message = `¡Hola! Me registré en el sorteo con mi ${participant.petType === 'dog' ? 'perro' : 'gato'} ${participant.petName} y elegí el producto "${product.name} - ${product.presentation}"${priceText}. Quiero pedirlo con mi beneficio de primera compra (10% OFF + Snack de regalo + Envío Gratis).`;
     const url = buildWhatsAppUrl(CAMPAIGN_CONFIG.contacts.whatsappNumber, message);
 
     trackEvent('product_whatsapp_click', {
