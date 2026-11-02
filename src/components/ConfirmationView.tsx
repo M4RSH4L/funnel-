@@ -16,6 +16,8 @@ import {
   Heart,
   Dog,
   Cat,
+  Instagram,
+  Facebook,
 } from 'lucide-react';
 import { ParticipantSuccessData } from './RaffleForm';
 
@@ -267,6 +269,33 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                   <Calendar className="w-3 h-3 text-red-600 inline" /> {CAMPAIGN_CONFIG.raffle.drawDate}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Redes Sociales Oficiales en Confirmación */}
+          <div className="mt-5 pt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <span className="text-xs font-bold text-neutral-600">
+              Seguinos en nuestras redes para ver el sorteo en vivo:
+            </span>
+            <div className="flex items-center gap-2.5">
+              <a
+                href={CAMPAIGN_CONFIG.contacts.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-bold shadow-xs transition-all active:scale-95"
+              >
+                <Instagram className="w-4 h-4" />
+                <span>Instagram</span>
+              </a>
+              <a
+                href={CAMPAIGN_CONFIG.contacts.facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1877F2] hover:bg-[#166FE5] text-white text-xs font-bold shadow-xs transition-all active:scale-95"
+              >
+                <Facebook className="w-4 h-4" />
+                <span>Facebook</span>
+              </a>
             </div>
           </div>
         </div>

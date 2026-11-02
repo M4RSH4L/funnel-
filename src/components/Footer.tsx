@@ -36,30 +36,32 @@ export const Footer: React.FC<FooterProps> = ({ onOpenTerms, onOpenPrivacy }) =>
                 href={CAMPAIGN_CONFIG.contacts.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 flex items-center justify-center transition-colors"
+                className="px-3.5 h-10 rounded-full bg-neutral-800 hover:bg-pink-600 text-neutral-200 hover:text-white flex items-center gap-2 text-xs font-bold transition-colors"
                 aria-label="Instagram oficial de Lo Que Mastica Tu Mascota"
               >
-                <Instagram className="w-5 h-5" />
-              </a>
-
-              <a
-                href={`https://wa.me/${CAMPAIGN_CONFIG.contacts.whatsappNumber.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-emerald-600 text-neutral-200 flex items-center justify-center transition-colors"
-                aria-label="WhatsApp de atención de Lo Que Mastica Tu Mascota"
-              >
-                <MessageCircle className="w-5 h-5" />
+                <Instagram className="w-4 h-4" />
+                <span>Instagram</span>
               </a>
 
               <a
                 href={CAMPAIGN_CONFIG.contacts.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 flex items-center justify-center transition-colors"
+                className="px-3.5 h-10 rounded-full bg-neutral-800 hover:bg-[#1877F2] text-neutral-200 hover:text-white flex items-center gap-2 text-xs font-bold transition-colors"
                 aria-label="Facebook oficial de Lo Que Mastica Tu Mascota"
               >
-                <Facebook className="w-5 h-5" />
+                <Facebook className="w-4 h-4" />
+                <span>Facebook</span>
+              </a>
+
+              <a
+                href={`https://wa.me/${CAMPAIGN_CONFIG.contacts.whatsappNumber.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-neutral-800 hover:bg-emerald-600 text-neutral-200 hover:text-white flex items-center justify-center transition-colors"
+                aria-label="WhatsApp de atención de Lo Que Mastica Tu Mascota"
+              >
+                <MessageCircle className="w-5 h-5" />
               </a>
             </div>
           </div>

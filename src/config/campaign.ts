@@ -34,7 +34,7 @@ export const CAMPAIGN_CONFIG = {
       'https://www.instagram.com/loquemasticatumascota/',
     facebookUrl: (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_FACEBOOK_URL) || 
       (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_FACEBOOK_URL) || 
-      'https://www.facebook.com/loquemasticatumascota/',
+      'https://web.facebook.com/loquemasticatumascota',
     siteUrl: (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_SITE_URL) || 
       (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SITE_URL) || 
       'https://loquemasticatumascota.com.ar',
