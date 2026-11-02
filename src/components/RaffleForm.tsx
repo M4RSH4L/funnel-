@@ -463,7 +463,7 @@ export const RaffleForm: React.FC<RaffleFormProps> = ({
               <input
                 id="field-currentFood"
                 type="text"
-                placeholder="Ej. Xitallcan, Royal Canin, Pro Plan, etc."
+                placeholder="Ej. Vitalcan, Top Nutrition, Royal Canin, etc."
                 value={currentFood}
                 onFocus={() => {
                   handleFirstInteraction();

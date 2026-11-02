@@ -64,13 +64,14 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
 
   // WhatsApp click handler for specific product in carousel
   const handleProductWhatsAppClick = (product: ProductItem) => {
-    const message = `¡Hola! Vi en la promo del sorteo el producto "${product.name} - ${product.presentation}". Me gustaría pedirlo con el beneficio de primera compra para mi mascota ${participant.petName}.`;
+    const message = `¡Hola! Me registré en el sorteo con mi ${participant.petType === 'dog' ? 'perro' : 'gato'} ${participant.petName} y elegí el producto "${product.name} (${product.presentation})". Quiero pedirlo con mi beneficio de primera compra (10% OFF + Snack de regalo + Envío Gratis).`;
     const url = buildWhatsAppUrl(CAMPAIGN_CONFIG.contacts.whatsappNumber, message);
 
     trackEvent('product_whatsapp_click', {
       productId: product.id,
       productName: product.name,
       brand: product.brand,
+      species: product.species,
       price: product.price,
     });
 
@@ -79,48 +80,125 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
 
   // Product Carousel state & logic
   const carouselRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const pauseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // Filter products by petType or 'both'
+  // Strictly filter products by participant's selected pet species ('dog' or 'cat')
   const relevantProducts = CAMPAIGN_CONFIG.products.filter(
-    (p) => p.species === participant.petType || p.species === 'both'
+    (p) => p.species === participant.petType
   );
 
-  const checkScroll = () => {
-    if (carouselRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-      setCanScrollLeft(scrollLeft > 10);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+  // Repeat products so the carousel track always overflows on desktop & mobile for continuous auto-scrolling
+  const repeatCount = relevantProducts.length > 0 ? Math.max(4, Math.ceil(8 / relevantProducts.length)) : 1;
+  const carouselItems = Array.from({ length: repeatCount }, () => relevantProducts).flat();
+
+  //Temporarily pause autoplay on manual user interaction and auto-resume after 4s
+  const pauseTemporarily = () => {
+    setIsPaused(true);
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
     }
+    pauseTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 4000);
   };
 
-  const scrollCarousel = (direction: 'left' | 'right') => {
-    if (carouselRef.current) {
-      const scrollAmount = carouselRef.current.clientWidth * 0.8;
-      carouselRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
+  useEffect(() => {
+    return () => {
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const scrollToSlide = (slideIndex: number, behavior: ScrollBehavior = 'smooth') => {
+    const container = carouselRef.current;
+    if (!container) return;
+    const cards = container.querySelectorAll<HTMLElement>('[data-carousel-card]');
+    if (!cards.length) return;
+
+    const targetCard = cards[slideIndex];
+    if (targetCard) {
+      container.scrollTo({
+        left: targetCard.offsetLeft - container.offsetLeft,
+        behavior,
       });
     }
   };
 
-  // Autoplay carousel gently unless paused by user interaction or visibility change
+  const handleManualScroll = () => {
+    const container = carouselRef.current;
+    if (!container || relevantProducts.length === 0) return;
+    const cards = container.querySelectorAll<HTMLElement>('[data-carousel-card]');
+    if (!cards.length) return;
+
+    const firstCardWidth = cards[0].offsetWidth + 16; // card width + gap-4 (16px)
+    if (firstCardWidth > 0) {
+      const approxIndex = Math.round(container.scrollLeft / firstCardWidth);
+      setActiveIndex(approxIndex % relevantProducts.length);
+    }
+  };
+
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    pauseTemporarily();
+    const container = carouselRef.current;
+    if (!container || relevantProducts.length === 0) return;
+    const cards = container.querySelectorAll<HTMLElement>('[data-carousel-card]');
+    if (!cards.length) return;
+
+    const stepWidth = cards[0].offsetWidth + 16;
+    const currentSlide = Math.round(container.scrollLeft / stepWidth);
+
+    if (direction === 'left') {
+      if (currentSlide <= 0) {
+        const jumpIndex = relevantProducts.length;
+        scrollToSlide(jumpIndex, 'instant' as ScrollBehavior);
+        requestAnimationFrame(() => scrollToSlide(jumpIndex - 1, 'smooth'));
+      } else {
+        scrollToSlide(currentSlide - 1, 'smooth');
+      }
+    } else {
+      const maxSlide = carouselItems.length - 1;
+      if (currentSlide >= maxSlide - 2) {
+        const normalized = currentSlide % relevantProducts.length;
+        scrollToSlide(normalized, 'instant' as ScrollBehavior);
+        requestAnimationFrame(() => scrollToSlide(normalized + 1, 'smooth'));
+      } else {
+        scrollToSlide(currentSlide + 1, 'smooth');
+      }
+    }
+  };
+
+  // Automatic carousel displacement every 2.8 seconds
   useEffect(() => {
+    if (relevantProducts.length === 0) return;
+
     const interval = setInterval(() => {
       if (!isPaused && document.visibilityState === 'visible' && carouselRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 20) {
-          carouselRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        const container = carouselRef.current;
+        const cards = container.querySelectorAll<HTMLElement>('[data-carousel-card]');
+        if (!cards.length) return;
+
+        const stepWidth = cards[0].offsetWidth + 16;
+        const currentSlide = Math.round(container.scrollLeft / stepWidth);
+        const halfPoint = Math.floor(carouselItems.length / 2);
+
+        if (currentSlide >= halfPoint) {
+          // Seamlessly reset to the equivalent slide in the first set before advancing
+          const equivalentSlide = currentSlide % relevantProducts.length;
+          scrollToSlide(equivalentSlide, 'instant' as ScrollBehavior);
+          setTimeout(() => {
+            scrollToSlide(equivalentSlide + 1, 'smooth');
+          }, 40);
         } else {
-          carouselRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+          scrollToSlide(currentSlide + 1, 'smooth');
         }
       }
-    }, 4500);
+    }, 2800);
 
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, relevantProducts.length, carouselItems.length]);
 
   return (
     <div className="pb-16 pt-4 animate-fade-in">
@@ -378,75 +456,79 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
         </div>
 
         {/* BLOQUE 3: Carrusel de Productos Favoritos */}
-        <div
-          className="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border border-neutral-200"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
-        >
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-lg border border-neutral-200">
+          <div className="flex items-center justify-between gap-4 mb-6">
             <div>
-              <span className="text-xs font-bold text-red-600 uppercase tracking-wider block">
-                Catálogo Recomendado
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-red-600 uppercase tracking-wider mb-1">
+                {participant.petType === 'dog' ? (
+                  <Dog className="w-4 h-4 text-red-600" />
+                ) : (
+                  <Cat className="w-4 h-4 text-red-600" />
+                )}
+                <span>
+                  Catálogo Recomendado para {participant.petType === 'dog' ? 'Perros' : 'Gatos'}
+                </span>
               </span>
               <h4 className="text-xl sm:text-2xl font-black text-neutral-900">
-                Los favoritos para llenar su plato
+                Los favoritos para llenar el plato de {participant.petName}
               </h4>
             </div>
 
             {/* Carousel Navigation Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => scrollCarousel('left')}
-                disabled={!canScrollLeft}
-                className="p-2 rounded-full border border-neutral-300 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                aria-label="Ver productos anteriores"
+                className="p-2.5 rounded-full border border-neutral-300 bg-white hover:bg-amber-50 hover:border-amber-400 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                aria-label="Ver producto anterior"
               >
-                <ChevronLeft className="w-5 h-5 text-neutral-700" />
+                <ChevronLeft className="w-5 h-5 text-neutral-800" />
               </button>
               <button
                 type="button"
                 onClick={() => scrollCarousel('right')}
-                disabled={!canScrollRight}
-                className="p-2 rounded-full border border-neutral-300 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                aria-label="Ver siguientes productos"
+                className="p-2.5 rounded-full border border-neutral-300 bg-white hover:bg-amber-50 hover:border-amber-400 active:scale-95 transition-all cursor-pointer shadow-2xs"
+                aria-label="Ver siguiente producto"
               >
-                <ChevronRight className="w-5 h-5 text-neutral-700" />
+                <ChevronRight className="w-5 h-5 text-neutral-800" />
               </button>
             </div>
           </div>
 
-          {/* Touch-scrollable Track */}
+          {/* Touch-scrollable & Auto-displacing Track */}
           <div
             ref={carouselRef}
-            onScroll={checkScroll}
-            className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scrollbar-none"
+            onScroll={handleManualScroll}
+            onTouchStart={pauseTemporarily}
+            onMouseDown={pauseTemporarily}
+            className="flex gap-4 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             tabIndex={0}
             role="region"
-            aria-label="Carrusel de productos de alimento para mascotas"
+            aria-label={`Carrusel de productos de alimento para ${participant.petType === 'dog' ? 'perro' : 'gato'}`}
           >
-            {relevantProducts.map((product) => (
+            {carouselItems.map((product, index) => (
               <div
-                key={product.id}
-                className="min-w-[270px] sm:min-w-[290px] max-w-[300px] bg-neutral-50 rounded-2xl p-4 border border-neutral-200 flex flex-col justify-between shrink-0 snap-start hover:shadow-md transition-shadow group"
+                key={`${product.id}-${index}`}
+                data-carousel-card
+                className="w-[260px] sm:w-[280px] bg-neutral-50 rounded-2xl p-4 border border-neutral-200 flex flex-col justify-between shrink-0 snap-start hover:shadow-md hover:border-amber-300 transition-all group"
               >
                 <div>
                   {/* Badge & Presentation */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">
                       {product.badge || product.brand}
                     </span>
-                    <span className="text-xs text-neutral-500 font-semibold">{product.presentation}</span>
+                    <span className="text-[11px] text-neutral-600 font-bold truncate">
+                      {product.presentation}
+                    </span>
                   </div>
 
-                  {/* Product Image */}
-                  <div className="relative rounded-xl overflow-hidden bg-white border border-neutral-200 mb-3 aspect-4/3 flex items-center justify-center p-2">
+                  {/* Product Image (Vertical 792x1024 format with LQMTM footer bar) */}
+                  <div className="relative rounded-xl overflow-hidden bg-white border border-neutral-200 mb-3 aspect-[792/1024] flex items-center justify-center shadow-2xs">
                     <img
                       src={product.imageUrl}
                       alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
                       loading="lazy"
                     />
                   </div>
@@ -459,23 +541,29 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-neutral-200">
-                  {/* Price */}
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-lg font-black text-neutral-950">
-                      ${product.price.toLocaleString('es-AR')}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-xs text-neutral-400 line-through">
-                        ${product.originalPrice.toLocaleString('es-AR')}
+                  {typeof product.price === 'number' ? (
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <span className="text-lg font-black text-neutral-950">
+                        ${product.price.toLocaleString('es-AR')}
                       </span>
-                    )}
-                  </div>
+                      {product.originalPrice && (
+                        <span className="text-xs text-neutral-400 line-through">
+                          ${product.originalPrice.toLocaleString('es-AR')}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center gap-1.5 mb-3 text-[11px] font-extrabold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>10% OFF 1ª Compra + Snack</span>
+                    </div>
+                  )}
 
                   {/* Product CTA */}
                   <button
                     type="button"
                     onClick={() => handleProductWhatsAppClick(product)}
-                    className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-neutral-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-neutral-950 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
                     <span>Pedir por WhatsApp</span>
@@ -485,9 +573,34 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
             ))}
           </div>
 
-          <p className="mt-3 text-[11px] text-neutral-400 text-center">
-            ← Deslizá horizontalmente para ver más opciones disponibles para tu {participant.petType === 'dog' ? 'perro' : 'gato'} →
-          </p>
+          {/* Pagination Dots + Helper Text */}
+          <div className="mt-3 flex flex-col items-center gap-2">
+            {relevantProducts.length > 1 && (
+              <div className="flex items-center justify-center gap-2" role="tablist" aria-label="Indicador de productos">
+                {relevantProducts.map((prod, idx) => (
+                  <button
+                    key={prod.id}
+                    type="button"
+                    onClick={() => {
+                      pauseTemporarily();
+                      setActiveIndex(idx);
+                      scrollToSlide(idx, 'smooth');
+                    }}
+                    aria-label={`Ir al producto ${prod.name}`}
+                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                      activeIndex === idx
+                        ? 'w-6 bg-red-600'
+                        : 'w-2 bg-neutral-300 hover:bg-neutral-400'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-neutral-400 text-center">
+              ← Desplazamiento automático · Deslizá para ver las opciones para tu{' '}
+              {participant.petType === 'dog' ? 'perro' : 'gato'} →
+            </p>
+          </div>
         </div>
       </div>
     </div>
