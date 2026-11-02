@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import {
   Sparkles,
   Gift,
+  BadgePercent,
   CheckCircle2,
   MessageCircle,
   Truck,
@@ -390,13 +391,18 @@ export const ConfirmationView: React.FC<ConfirmationViewProps> = ({
                 {CAMPAIGN_CONFIG.firstPurchaseOffer.benefits.map((benefit, index) => (
                   <React.Fragment key={benefit.id}>
                     <div className="relative bg-[#FAF1EC] rounded-2xl px-3.5 py-2.5 sm:px-3.5 sm:py-3 shadow-md flex items-center gap-3 z-10">
-                      {/* Circular Prize Image */}
-                      <div className="w-14 h-14 sm:w-[58px] sm:h-[58px] rounded-full overflow-hidden shrink-0 bg-[#D50911] border-2 border-[#D50911]/20 shadow-xs flex items-center justify-center">
-                        <img
-                          src={benefit.imageUrl}
-                          alt={benefit.imageAlt}
-                          className="w-full h-full object-cover"
-                        />
+                      {/* Circular Category Icon */}
+                      <div
+                        className="w-14 h-14 sm:w-[58px] sm:h-[58px] rounded-full shrink-0 bg-gradient-to-br from-[#E30B13] to-[#B5050B] border-2 border-[#D50911]/30 shadow-sm flex items-center justify-center text-white"
+                        aria-hidden="true"
+                      >
+                        {benefit.id === 'benefit-1' ? (
+                          <BadgePercent className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.25]" />
+                        ) : benefit.id === 'benefit-2' ? (
+                          <Gift className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.25]" />
+                        ) : (
+                          <Truck className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.25]" />
+                        )}
                       </div>
 
                       {/* Benefit Copy */}
